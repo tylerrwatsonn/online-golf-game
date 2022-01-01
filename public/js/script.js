@@ -4,13 +4,19 @@ const newCardDiv = document.querySelector(".new-card-slot")
 const deckDiv = document.querySelector(".deck")
 const discardDiv = document.querySelector(".discard-pile")
 
-let deck, turn
+let deck, turn, startFlips
 let hands = []
 const PLAYER_INDEX = 0
 
 deckDiv.addEventListener("click", () => {
-    newCardDiv.innerHTML = ""
     getTopCard()
+})
+
+newCardDiv.addEventListener("click", () => {
+    if(newCardDiv.children.length == 1) {
+        newCardDiv.children[0].style.border = ".1em solid orange"
+        newCardDiv.children[0].clicked = true
+    }
 })
 
 document.addEventListener("click", (evt) => {
@@ -53,6 +59,7 @@ function startGame(numPlayers = 4) {
     hand_cards.forEach(hand => hands.push(new Hand(hand)))
 
     let playerHand = hands[PLAYER_INDEX]
+    startFlips = [0, 0, 0, 0]
 
     const playerRow1 = document.getElementById('player-row-1')
     const playerRow2 = document.getElementById('player-row-2')
@@ -67,14 +74,21 @@ function startGame(numPlayers = 4) {
                 swapCards(newCardDiv, card, playerHand, i)
             } else if (discardDiv.children.length > 0 && discardDiv.children[0].clicked) {
                 swapCards(discardDiv, card, playerHand, i)
-            } else if ((turn == PLAYER_INDEX || startFlipAllowed(playerHand)) && playerHand.cards[i].revealed == false) {
+            } else if (turn == PLAYER_INDEX && playerHand.cards[i].revealed == false && startFlipAllowed(PLAYER_INDEX) == false) {
                 let flippedCard = playerHand.cards[i].getHTML()
                 playerHand.cards[i].revealed = true
                 flippedCard = addEventListenersToPlayerCard(flippedCard, playerHand, i)
                 playerRow1.replaceChild(flippedCard, card)
-                if (turn == PLAYER_INDEX && startFlipAllowed(playerHand) == false) {
-                    nextTurn()
-                }
+                nextTurn()
+                discardDiv.innerHTML = ""
+                discardDiv.appendChild(newCardDiv.children[0])
+                newCardDiv.innerHTML = ""
+            } else if (startFlipAllowed(PLAYER_INDEX) && playerHand.cards[i].revealed == false) {
+                let flippedCard = playerHand.cards[i].getHTML()
+                playerHand.cards[i].revealed = true
+                flippedCard = addEventListenersToPlayerCard(flippedCard, playerHand, i)
+                playerRow1.replaceChild(flippedCard, card)
+                startFlips[PLAYER_INDEX] = startFlips[PLAYER_INDEX] + 1
             }
         })
     }
@@ -89,14 +103,21 @@ function startGame(numPlayers = 4) {
                 swapCards(newCardDiv, card, playerHand, i)
             } else if (discardDiv.children.length > 0 && discardDiv.children[0].clicked) {
                 swapCards(discardDiv, card, playerHand, i)
-            } else if ((turn == PLAYER_INDEX || startFlipAllowed(playerHand)) && playerHand.cards[i].revealed == false) {
+            } else if (turn == PLAYER_INDEX && playerHand.cards[i].revealed == false && startFlipAllowed(PLAYER_INDEX) == false) {
                 let flippedCard = playerHand.cards[i].getHTML()
                 playerHand.cards[i].revealed = true
                 flippedCard = addEventListenersToPlayerCard(flippedCard, playerHand, i)
                 playerRow2.replaceChild(flippedCard, card)
-                if (turn == PLAYER_INDEX && startFlipAllowed(playerHand) == false) {
-                    nextTurn()
-                }
+                nextTurn()
+                discardDiv.innerHTML = ""
+                discardDiv.appendChild(newCardDiv.children[0])
+                newCardDiv.innerHTML = ""
+            } else if (startFlipAllowed(PLAYER_INDEX) && playerHand.cards[i].revealed == false) {
+                let flippedCard = playerHand.cards[i].getHTML()
+                playerHand.cards[i].revealed = true
+                flippedCard = addEventListenersToPlayerCard(flippedCard, playerHand, i)
+                playerRow2.replaceChild(flippedCard, card)
+                startFlips[PLAYER_INDEX] = startFlips[PLAYER_INDEX] + 1
             }
         })
     }
@@ -121,14 +142,13 @@ function startGame(numPlayers = 4) {
 
 }
 
+function startFlipAllowed(player_index) {
+    return startFlips[player_index] < 2
+}
+
 function nextTurn() {
     turn = (turn + 1) % 4
     console.log(`NEXT TURN - ${turn}`)
-}
-
-function startFlipAllowed(playerHand) {
-    let revealedCount = playerHand.cards.filter(card => card.revealed).length
-    return revealedCount < 2
 }
 
 function swapCards(parentDiv, card, playerHand, i) {
@@ -145,15 +165,11 @@ function swapCards(parentDiv, card, playerHand, i) {
 }
 
 function getTopCard() {
-    let newCard = deck.pop()
-    newCardDiv.appendChild(newCard.getHTML())
-    newCard = newCardDiv.children[0]
-    newCard.addEventListener("click", () => {
-        if(newCard == newCardDiv.children[0]) {
-            newCard.style.border = ".1em solid orange"
-            newCardDiv.children[0].clicked = true
-        }
-    })
+    if (newCardDiv.children.length == 0) {
+        let newCard = deck.pop()
+        newCardDiv.innerHTML = ""
+        newCardDiv.appendChild(newCard.getHTML())
+    }
 }
 
 function addEventListenersToPlayerCard(card, playerHand, i) {
