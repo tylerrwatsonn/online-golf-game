@@ -1,0 +1,21 @@
+
+<div class="card-row">
+    <% hand.cards.slice(0, 4).forEach((card, i) => { %>
+        <% if (card.revealed) { %>
+            <div class="card" data-value="<%= card.value %>"></div>
+        <% } else { %>
+            <div class="card hidden"></div>
+        <% } %>
+
+    <% }); %>
+</div>
+<div class="card-row">
+    <% hand.cards.slice(4, 8).forEach((card, i) => { %>
+        <% if (card.revealed) { %>
+            <div class="card" data-value="<%= card.value %>"></div>
+        <% } else { %>
+            <div class="card hidden"></div>
+        <% } %>
+
+    <% }); %>
+</div>

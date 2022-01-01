@@ -1,0 +1,36 @@
+{
+    "cards": [
+        {
+            "value": "5",
+            "revealed": true 
+        },
+        {
+            "value": "8",
+            "revealed": false
+        },
+        {
+            "value": "9",
+            "revealed": false 
+        },
+        {
+            "value": "8",
+            "revealed": false
+        },
+        {
+            "value": "5",
+            "revealed": false 
+        },
+        {
+            "value": "8",
+            "revealed": false
+        },
+        {
+            "value": "11",
+            "revealed": true 
+        },
+        {
+            "value": "8",
+            "revealed": false
+        }
+    ]
+}
