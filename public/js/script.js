@@ -4,9 +4,15 @@ const newCardDiv = document.querySelector(".new-card-slot")
 const deckDiv = document.querySelector(".deck")
 const discardDiv = document.querySelector(".discard-pile")
 
-let deck, turn, startFlips
+let deck, turn, startFlips, roundOver, roundScores, totalScores
 let hands = []
 const PLAYER_INDEX = 0
+let offset = 0 // TODO: THIS MUST BE CHANGED
+let numPlayers
+
+let testHand = new Hand([new Card("5"), new Card("5"), new Card("4"), new Card("5"),
+                         new Card("5"), new Card("5"), new Card("5"), new Card("5")])
+console.log(testHand.score)
 
 deckDiv.addEventListener("click", () => {
     getTopCard()
@@ -39,88 +45,35 @@ document.addEventListener("click", (evt) => {
 // }
 
 startGame()
+
 function startGame(numPlayers = 4) {
+
+    roundScores = []
+    roundScores = new Array(9).fill(new Array(numPlayers).fill(0))
+    totalScores = new Array(numPlayers).fill(0)
+
+    for (let i=0; i<9; i++) {
+        roundOver = false
+        startRound(numPlayers, i%numPlayers)
+        roundScores[i] = getScores()
+        totalScores = totalScores.map((totalScore, player) => {
+            totalScore + scores[i][player]
+        })
+    }
+    
+}
+
+function startRound(numPlayers, firstPlayer) {
     deck = new Deck()
     deck.shuffle()
 
-    turn = 0
+    turn = firstPlayer
+    numPlayers = numPlayers
+    hands = []
 
-    let hand_cards = []
-    for(let i = 0; i < 8; i++) {
-        for(let j = 0; j < numPlayers; j++) {
-            if(hand_cards.length < numPlayers) {
-                hand_cards.push([])
-            }
+    initializeHands(numPlayers)
 
-            hand_cards[j].push(deck.pop())
-        }
-    }
-
-    hand_cards.forEach(hand => hands.push(new Hand(hand)))
-
-    let playerHand = hands[PLAYER_INDEX]
-    startFlips = [0, 0, 0, 0]
-
-    const playerRow1 = document.getElementById('player-row-1')
-    const playerRow2 = document.getElementById('player-row-2')
-
-    for(let i=0; i < 4; i++) {
-        let card = playerHand.cards[i].getHTML()
-        card.classList = ["hidden-card"]
-        card.id = `player-card-${i}`
-        playerRow1.appendChild(card)
-        card.addEventListener("click", () => {
-            if (newCardDiv.children.length == 1 && newCardDiv.children[0].clicked) {
-                swapCards(newCardDiv, card, playerHand, i)
-            } else if (discardDiv.children.length > 0 && discardDiv.children[0].clicked) {
-                swapCards(discardDiv, card, playerHand, i)
-            } else if (turn == PLAYER_INDEX && playerHand.cards[i].revealed == false && startFlipAllowed(PLAYER_INDEX) == false) {
-                let flippedCard = playerHand.cards[i].getHTML()
-                playerHand.cards[i].revealed = true
-                flippedCard = addEventListenersToPlayerCard(flippedCard, playerHand, i)
-                playerRow1.replaceChild(flippedCard, card)
-                nextTurn()
-                discardDiv.innerHTML = ""
-                discardDiv.appendChild(newCardDiv.children[0])
-                newCardDiv.innerHTML = ""
-            } else if (startFlipAllowed(PLAYER_INDEX) && playerHand.cards[i].revealed == false) {
-                let flippedCard = playerHand.cards[i].getHTML()
-                playerHand.cards[i].revealed = true
-                flippedCard = addEventListenersToPlayerCard(flippedCard, playerHand, i)
-                playerRow1.replaceChild(flippedCard, card)
-                startFlips[PLAYER_INDEX] = startFlips[PLAYER_INDEX] + 1
-            }
-        })
-    }
-
-    for(let i=4; i < 8; i++) {
-        let card = playerHand.cards[i].getHTML()
-        card.classList = ["hidden-card"]
-        card.id = `player-card-${i}`
-        playerRow2.appendChild(card)
-        card.addEventListener("click", () => {
-            if (newCardDiv.children.length == 1 && newCardDiv.children[0].clicked) {
-                swapCards(newCardDiv, card, playerHand, i)
-            } else if (discardDiv.children.length > 0 && discardDiv.children[0].clicked) {
-                swapCards(discardDiv, card, playerHand, i)
-            } else if (turn == PLAYER_INDEX && playerHand.cards[i].revealed == false && startFlipAllowed(PLAYER_INDEX) == false) {
-                let flippedCard = playerHand.cards[i].getHTML()
-                playerHand.cards[i].revealed = true
-                flippedCard = addEventListenersToPlayerCard(flippedCard, playerHand, i)
-                playerRow2.replaceChild(flippedCard, card)
-                nextTurn()
-                discardDiv.innerHTML = ""
-                discardDiv.appendChild(newCardDiv.children[0])
-                newCardDiv.innerHTML = ""
-            } else if (startFlipAllowed(PLAYER_INDEX) && playerHand.cards[i].revealed == false) {
-                let flippedCard = playerHand.cards[i].getHTML()
-                playerHand.cards[i].revealed = true
-                flippedCard = addEventListenersToPlayerCard(flippedCard, playerHand, i)
-                playerRow2.replaceChild(flippedCard, card)
-                startFlips[PLAYER_INDEX] = startFlips[PLAYER_INDEX] + 1
-            }
-        })
-    }
+    startFlips = new Array(numPlayers).fill(0)
 
     const discardCard = deck.pop().getHTML()
     discardDiv.appendChild(discardCard)
@@ -142,23 +95,78 @@ function startGame(numPlayers = 4) {
 
 }
 
+function initializeHands(numPlayers) {
+
+    let hand_cards = []
+    for(let i = 0; i < 8; i++) {
+        for(let j = 0; j < numPlayers; j++) {
+            if(hand_cards.length < numPlayers) {
+                hand_cards.push([])
+            }
+
+            hand_cards[j].push(deck.pop())
+        }
+    }
+
+    hand_cards.forEach(hand => hands.push(new Hand(hand)))
+
+    hands.forEach((hand, player) => {
+        for (let row = 1; row < 3; row++) {
+            let rowDiv = document.getElementById(`player-${(player + offset)%numPlayers}-row-${row}`)
+            for(let j=0; j < 4; j++) {
+                let i = j + (4 * (row - 1))
+                let card = hand.cards[i].getHTML()
+                card.classList = ["hidden-card"]
+                card.id = `player-${(player + offset)%numPlayers}-card-${i}`
+                rowDiv.appendChild(card)
+                card.addEventListener("click", () => {
+                    if (turn == player && newCardDiv.children.length == 1 && newCardDiv.children[0].clicked) {
+                        swapCards(newCardDiv, card, player, i)
+                    } else if (turn == player && discardDiv.children.length > 0 && discardDiv.children[0].clicked) {
+                        swapCards(discardDiv, card, player, i)
+                    } else if (turn == player && hand.cards[i].revealed == false && startFlipAllowed(player) == false) {
+                        let flippedCard = hand.cards[i].getHTML()
+                        hand.cards[i].revealed = true
+                        flippedCard = addEventListenersToPlayerCard(flippedCard, player, i)
+                        rowDiv.replaceChild(flippedCard, card)
+                        if (newCardDiv.children.length == 1) {
+                            discardDiv.innerHTML = ""
+                            discardDiv.appendChild(newCardDiv.children[0])
+                        }
+                        newCardDiv.innerHTML = ""
+                        nextTurn()
+                    } else if (startFlipAllowed(player) && hand.cards[i].revealed == false) {
+                        let flippedCard = hand.cards[i].getHTML()
+                        hand.cards[i].revealed = true
+                        flippedCard = addEventListenersToPlayerCard(flippedCard, player, i)
+                        rowDiv.replaceChild(flippedCard, card)
+                        startFlips[player] = startFlips[player] + 1
+                    }
+                })
+            }
+        }
+    })
+    
+}
+
 function startFlipAllowed(player_index) {
     return startFlips[player_index] < 2
 }
 
 function nextTurn() {
     turn = (turn + 1) % 4
-    console.log(`NEXT TURN - ${turn}`)
+    roundOver = isRoundOver()
 }
 
-function swapCards(parentDiv, card, playerHand, i) {
+function swapCards(parentDiv, card, player, i) {
+    let playerHand = hands[player]
     let newCard = parentDiv.children[0]
     newCard.style.border = ""
     newCardDiv.innerHTML = ""
     discardDiv.innerHTML = ""
     discardDiv.appendChild(playerHand.cards[i].getHTML())
     let parentNode = card.parentNode
-    newCard = addEventListenersToPlayerCard(newCard, playerHand, i)
+    newCard = addEventListenersToPlayerCard(newCard, player, i)
     parentNode.replaceChild(newCard, parentNode.children[i%4])
     playerHand.cards[i] = new Card(newCard.dataset.value, true)
     nextTurn()
@@ -172,14 +180,25 @@ function getTopCard() {
     }
 }
 
-function addEventListenersToPlayerCard(card, playerHand, i) {
+function addEventListenersToPlayerCard(card, player, i) {
     card.addEventListener("click", () => {
-        if (newCardDiv.children.length == 1 && newCardDiv.children[0].clicked) {
-            swapCards(newCardDiv, card, playerHand, i)
-        } else if (discardDiv.children.length > 0 && discardDiv.children[0].clicked) {
-            swapCards(discardDiv, card, playerHand, i)
+        if (turn == player && newCardDiv.children.length == 1 && newCardDiv.children[0].clicked) {
+            swapCards(newCardDiv, card, player, i)
+        } else if (turn == player && discardDiv.children.length > 0 && discardDiv.children[0].clicked) {
+            swapCards(discardDiv, card, player, i)
         }
     })
     return card
 }
 
+function isRoundOver() {
+    return hands.every(hand => {
+        return hand.cards.every(card => {
+            return card.revealed
+        })
+    })
+}
+
+function getScores() {
+    return hands.map(hand => hand.score)
+}

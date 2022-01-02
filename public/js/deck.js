@@ -29,7 +29,32 @@ export class Hand {
     }
 
     get score() {
-        return 10;
+        let score = 0
+        let pairs = {}
+        for(let i = 0; i < 4; i++) {
+            if (this.cards[i].value == this.cards[i+4].value && this.cards[i].value != "-5") {
+                pairs[this.cards[i].value] = (pairs[this.cards[i].value] || 0) + 1
+            } else {
+                score += parseInt(this.cards[i].value) + parseInt(this.cards[i+4].value)
+            }
+        }
+        if (pairs) {
+            Object.keys(pairs).forEach( key => {
+                switch (pairs[key]) {
+                    case 2:
+                        score -= 10
+                        break;
+                    case 3:
+                        score -= 15
+                        break;
+                    case 4:
+                        score -= 20
+                        break;
+                    default:
+                }
+            })
+        }
+        return score
     }
 
     replace(i, card) {
